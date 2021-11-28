@@ -1,0 +1,33 @@
+groups:
+  - name: guiding
+    rules:
+
+    - alert: GuidingLostStars
+      expr: device:telescope:is_connected>0 AND on(host)
+            imaging:is_exposing>0 AND on(host)
+            guiding:status:lost_stars>0
+      for: 10m
+      labels:
+        severity: warning
+      annotations:
+        message: Guiding has lost stars.  Check clouds, autofocus, obstructions, dew, etc.
+
+    - alert: GuidingCrashed
+      expr: device:telescope:was_connected>0 AND on(host)
+            imaging:is_exposing>0 AND on(host) 
+            absent(guiding:status:is_guiding>0)
+      for: 5m
+      labels:
+        severity: critical
+      annotations:
+        message: Guiding has stopped while taking images, possibly the process has crashed.
+
+    - alert: GuidingStuck
+      expr: device:telescope:was_connected>0 AND on(host)
+            max without(status) (guiding:status:is_settling>0)
+      for: 5m
+      labels:
+        severity: critical
+      annotations:
+        message: Guiding is stuck dithering or settling.  This can indicate guiding software has crashed.
+

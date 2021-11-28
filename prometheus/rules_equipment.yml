@@ -1,0 +1,24 @@
+groups:
+  - name: nina:meridian_flip
+    rules:
+    - record: nina:meridian_flip:in_progress
+      expr: nina_status{item="MeridianFlip"}>0 #used to use telescope tracking, but it is disabled when slewing and resets pending alert timers
+
+  - name: nina:alerts
+    rules:
+    - alert: TelescopeMeridianFlipSlow
+      expr: nina:meridian_flip:in_progress>0
+      for: 15m
+      labels:
+        severity: critical
+      annotations:
+        message: Meridian flip is taking a long time.  Probably unable to plate solve or guiding is stuck.
+
+    - alert: GuidingWithoutTelescope
+      expr: guiding:status:is_guiding > on(host) device:telescope:is_connected
+      for: 1m
+      labels:
+        severity: critical
+      annotations:
+        message: |
+          Guiding is enabled but no scope is connected.

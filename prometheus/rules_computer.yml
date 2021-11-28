@@ -1,0 +1,66 @@
+groups:
+  - name: computer
+    rules:
+    # windows exporter doesn't include ip address metric for this or host, we need something for a join
+    # add "host" based on regex by doing nested label_replace
+    - record: computer:is_connected
+      expr: clamp(sum without(core,mode) (label_replace(rate(windows_cpu_time_total[1m]), "host", "$1", "instance", "^([a-zA-Z][^.]*)[.].*")>0),1,1)
+    - record: computer:was_connected
+      expr: clamp(sum without(core,mode) (label_replace(rate(windows_cpu_time_total[30m]), "host", "$1", "instance", "^([a-zA-Z][^.]*)[.].*")>0),1,1)
+
+    - alert: ComputerHighTemperature
+      expr: computer:is_connected * on(host)
+            windows_thermalzone_temperature_celsius / on(host) 
+            windows_thermalzone_percent_passive_limit > 0.9
+      for: 5m
+      labels:
+        severity: critical
+      annotations:
+        message: Computer "{{ .Labels.Instance }}" temperature is above 90% threshold.
+
+    - alert: ComputerHighUtilization
+      expr: computer:is_connected * on(host)
+            avg without (core) (irate(windows_cpu_time_total{mode="idle"}[1m])) < 0.1
+      for: 5m
+      labels:
+        severity: warning
+      annotations:
+        message: |
+          Computer "{{ .Labels.Host }}" utilization is above 90% threshold.
+          This can impact power consumption and eventually temperature.
+          Can be caused by a rogue process like virus scanning.
+
+    - alert: ComputerOffline
+      expr: computer:was_connected>0 AND ON(host)
+            computer:is_connected==0 AND ON(host)
+            device:telescope:was_connected>0
+      for: 5m
+      labels:
+        severity: critical
+      annotations:
+        message: |
+          Computer "{{ .Labels.Host }}" is offline.
+          Computer was connected and telescope was connected.
+          If the computer should be running, it has crashed.  Go restart it.
+
+    - alert: FakeAlertCritical1
+      expr: computer:is_connected==0
+      for: 1m
+      labels:
+        severity: critical
+    - alert: FakeAlertWarning1
+      expr: computer:is_connected==0
+      for: 2m
+      labels:
+        severity: warning
+    - alert: FakeAlertCritical2
+      expr: computer:is_connected==0
+      for: 3m
+      labels:
+        severity: critical
+    - alert: FakeAlertWarning2
+      expr: computer:is_connected==0
+      for: 4m
+      labels:
+        severity: warning
+

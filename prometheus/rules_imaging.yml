@@ -1,0 +1,199 @@
+groups:
+  - name: imaging
+    rules:
+    - record: imaging:is_sequence_running
+      expr: sum without(item) (nina_status{item=~".*Container.*"})>0
+    - record: imaging:is_exposing
+      expr: nina_status{item="TakeExposure"}>0
+    - record: imaging:was_exposing
+      expr: max without(time,gain,filter,offset,binning) (clamp(rate(nina_exposure_total[30m])>0,1,1))>0
+    - record: imaging:wait:altitude
+      expr: sum without(item) (nina_status{item=~"WaitFor.*Altitude"})>0
+    - record: imaging:wait:time
+      expr: sum without(item) (nina_status{item=~"WaitFor.*Time.*"})>0
+    - record: imaging:input:message
+      expr: nina_status{category="Utility",item=~"MessageBox.*"}>0
+    - record: imaging:input:rotate
+      expr: nina_status{category="Telescope",item=~".*Rotate"}>0
+    - record: imaging:input:polar_alignment
+      expr: nina_status{category="Polar Alignment",item="PolarAlignment"}>0
+    - record: imaging:input:filter
+      expr: nina_status{category="Filter Wheel",item="SwitchFilter"}>0
+    - record: imaging:error:plate_solve
+      expr: max by(host,instance) (rate(nina_error_total{module=~"ASTAP.*"}[5m]))>0
+
+    - alert: ImagingCrashed
+      expr: imaging:is_sequence_running>0 AND on(host)
+            imaging:wait:altitude==0 AND on(host)
+            rate(nina_total[5m])==0
+      for: 5m
+      labels:
+        severity: critical
+      annotations:
+        message: Imaging has stopped on host "{{ .Labels.Host }}", possibly the process has crashed.
+
+    - alert: ImagingHighErrorRate
+      expr: imaging:is_sequence_running>0 AND on(instance,host)
+            sum by(instance,host) (rate(nina_error_total[1m]))>0
+      for: 5m
+      labels:
+        severity: warning
+      annotations:
+        message: |
+          High rate of errors in imaging software.
+
+    - alert: ImagingUserInputWarning
+      expr: imaging:is_sequence_running>0 AND on(host)
+            imaging:input:message>0 OR on(host)
+            imaging:input:rotate>0 OR on(host)
+            imaging:input:polar_alignment>0 OR on(host)
+            imaging:input:filter>0
+      for: 2m
+      labels:
+        severity: warning
+      annotations:
+        message: "Imaging software waiting for user input.  Item: {{ .Labels.Item }}"
+
+    - alert: ImagingUserInputCritical
+      expr: imaging:is_sequence_running>0 AND on(host)
+            imaging:wait:altitude==0 AND on(host)
+            imaging:input:message>0 OR on(host)
+            imaging:input:rotate>0 OR on(host)
+            imaging:input:filter>0 
+      for: 5m
+      labels:
+        severity: critical
+      annotations:
+        message: "Imaging software waiting for user input.  Item: {{ .Labels.Item }}"
+
+    - alert: ImagingPolarAlignmentInputCritical
+      expr: imaging:input:polar_alignment>0
+      for: 15m
+      labels:
+        severity: critical
+      annotations:
+        message: "Imaging software waiting for user input.  Item: {{ .Labels.Item }}"
+
+    - alert: GeneralPlateSolveFailed
+      expr: device:telescope:is_connected>0 AND on(host)
+            imaging:error:plate_solve>0 AND on(host)
+            absent(nina_status{item="MeridianFlip"}>0) AND on(host)
+            absent(nina_status{item=~"Center.*"}>0)
+      for: 0m
+      labels:
+        severity: warning
+      annotations:
+        message: |
+          Plate solve has failed recently on host "{{ .Labels.Host }}".
+
+    - alert: CenterPlateSolveFailed
+      expr: device:telescope:is_connected>0 AND on(host)
+            imaging:error:plate_solve>0 AND on(host)
+            nina_status{item=~"Center.*"}>0
+      for: 15m
+      labels:
+        severity: critical
+      annotations:
+        message: |
+          Plate solve failed while centering on host "{{ .Labels.Host }}".
+          If you see this retries to account for clouds have failed.
+          Fix this to get proper centering.
+
+    - alert: MeridianFlipPlateSolveFailed
+      expr: device:telescope:is_connected>0 AND on(host)
+            imaging:error:plate_solve>0 AND on(host)
+            nina_status{item="MeridianFlip"}>0
+      for: 15m
+      labels:
+        severity: critical
+      annotations:
+        message: |
+          Plate solve failed after meridian flip on host "{{ .Labels.Host }}".
+          If you see this retries to account for clouds have failed.
+          Fix this to get proper centering.
+
+    - alert: AutofocusNotRun2h
+      expr: imaging:is_sequence_running AND on(host) (device:telescope:is_connected * on(host) nina_status{item="RunAutofocus"} == 0)
+      for: 120m
+      labels:
+        severity: critical
+      annotations:
+        message: |
+          Autofocus has not run in the last 2 hours.  Sequences are setup to run AF every 1.5 hours.
+          Cancel sequence, reconnect focuser, run AF manually, start sequence.
+
+    - alert: PoorAutofocus
+      expr: device:telescope:is_connected>0 AND on(host)
+            avg without(type) (nina_autofocus_rsquares{type!~".*trend|Hyperbolic"})<0.7 AND on()
+            condition:is_night > 0
+      for: 10m
+      labels:
+        severity: warning
+      annotations:
+        message: |
+          Autofocus is bad, R^2 average is less than 0.8.
+          This should mean AF will use previous settings and image quality may be impacated.
+
+    - alert: FocuserTemperatureLow
+      expr: device:telescope:is_connected>0 AND on(host)
+            nina_status{category="Focuser",item="Temperature"} < -50 AND on()
+            condition:is_night>0
+      for: 1m
+      labels:
+        severity: warning
+      annotations:
+        message: Focuser is reporting temperature is very low.  Just need to disconnect focuser, reconnect in NINA, and verify temperature.
+
+    - alert: FailedToAutoFocus
+      expr: device:telescope:is_connected>0 AND on(host)
+            rate(nina_error_total{module="Focuser",type="RunAutofocus"}[5m]) > 0 AND on()
+            condition:is_night > 0
+      for: 1m
+      labels:
+        severity: warning
+      annotations:
+        message: "Focuser failed to autofocus.  Reverted to previous focus position.  Likely indicator of obstruction: clouds, tree, house."
+
+    - alert: FailedToSaveImage
+      expr: device:telescope:is_connected>0 AND on(host)
+            rate(nina_error_total{module="Camera",type="TakeExposure"}[15m]) > 0
+            # don't limit to night, could be taking daytime images!
+      for: 1m
+      labels:
+        severity: critical
+      annotations:
+        message: Unable to save images.  Stop sequence and try to save snapshot.  Might need to reconnect cameras.
+
+    - alert: UncooledImaging
+      expr: imaging:is_exposing * on(host) 
+            device:camera:temperature{name!~".*Mini.*"}>0 # not(guide camera)
+      for: 1m
+      labels:
+        severity: critical
+      annotations:
+        message: Taking image but camera sensor is warm.  Did cooling get skipped?
+
+    - alert: UnguidedImaging
+      expr: imaging:is_exposing > on(host) guiding:status:is_guiding
+      for: 1m
+      labels:
+        severity: critical
+      annotations:
+        message: Taking image but not guiding.
+
+    - alert: WaitForAltitude
+      expr: nina_status{item="WaitForAltitude"} * on(job) 
+            condition:is_night > 0
+      for: 10m
+      labels:
+        severity: critical
+      annotations:
+        message: Waiting for target too long.  Probably misconfigured sequence conditions.
+
+    - alert: ImagingStuck
+      expr: nina_status{item!="TakeExposure",item=~".*Exposure"} > on(instance) nina_status{item="TakeExposure"}
+      for: 5m
+      labels:
+        severity: critical
+      annotations:
+        message: Imaging is stuck somehow, probably need to restart NINA.

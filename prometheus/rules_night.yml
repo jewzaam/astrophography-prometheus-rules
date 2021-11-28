@@ -1,0 +1,7 @@
+groups:
+  - name: condition
+    rules:
+    - record: condition:is_night
+      expr: clamp(timeOfDay_begin_night< time() < timeOfDay_begin_day,0,1) OR on() vector(0)
+    - record: condition:is_day
+      expr: clamp(timeOfDay_begin_day < time() < timeOfDay_begin_night,0,1) OR on() vector(0)

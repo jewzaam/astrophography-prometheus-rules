@@ -1,0 +1,13 @@
+groups:
+  - name: watchdog
+    rules:
+
+    - alert: Watchdog
+      expr: vector(1)
+      labels:
+        severity: warning
+        service: watchdog
+      annotations:
+        message: |
+          Absense of this alert indicates an alerting outage.
+          Used in healthchecks.io integration.
