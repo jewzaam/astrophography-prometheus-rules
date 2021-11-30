@@ -175,7 +175,7 @@ groups:
 
     - alert: UnguidedImaging
       expr: imaging:is_exposing > on(host) guiding:status:is_guiding
-      for: 1m
+      for: 5m
       labels:
         severity: critical
       annotations:
