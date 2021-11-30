@@ -172,7 +172,9 @@ groups:
         message: Taking image but camera sensor is warm.  Did cooling get skipped?
 
     - alert: UnguidedImaging
-      expr: imaging:is_exposing * on (host,instance) nina_status{item=~".*DeepSkyObjectContainer"} * on(host) (guiding:status:is_guiding == bool 0)
+      expr: imaging:is_exposing * on (host,instance) 
+            nina_status{item=~".*DeepSkyObjectContainer"} * on(host) 
+            (guiding:status:is_guiding == bool 0) > 0
       for: 5m
       labels:
         severity: critical
@@ -180,7 +182,9 @@ groups:
         message: Taking image of DSO but not guiding.  Guiding crashed or was missed in sequence.
 
     - alert: UnguidedImaging
-      expr: imaging:is_exposing * on (host,instance) nina_status{item=~".*DeepSkyObjectContainer"} * on() absent(guiding:status:is_guiding)
+      expr: imaging:is_exposing * on (host,instance) 
+            nina_status{item=~".*DeepSkyObjectContainer"} * on() 
+            absent(guiding:status:is_guiding) > 0
       for: 5m
       labels:
         severity: critical
