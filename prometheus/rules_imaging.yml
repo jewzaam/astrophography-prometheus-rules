@@ -4,13 +4,11 @@ groups:
     - record: imaging:is_sequence_running
       expr: sum without(item) (nina_status{item=~".*Container.*"})>0
     - record: imaging:is_exposing
-      expr: nina_status{item="TakeExposure"}>0
+      expr: nina_status{item="TakeExposure"}
     - record: imaging:was_exposing
       expr: max without(time,gain,filter,offset,binning) (clamp(rate(nina_exposure_total[30m])>0,1,1))>0
     - record: imaging:wait:altitude
       expr: sum without(item) (nina_status{item=~"WaitFor.*Altitude"})>0
-    - record: imaging:wait:time
-      expr: sum without(item) (nina_status{item=~"WaitFor.*Time.*"})>0
     - record: imaging:input:message
       expr: nina_status{category="Utility",item=~"MessageBox.*"}>0
     - record: imaging:input:rotate
@@ -180,6 +178,22 @@ groups:
         severity: critical
       annotations:
         message: Taking image but not guiding.
+
+    - alert: GuidingWithoutImaging
+      expr: guiding:status:is_guiding > 0 AND on() absent(imaging:is_exposing)
+      for: 5m
+      labels:
+        severity: critical
+      annotations:
+        message: Guiding but not taking images.  Possibly NINA not running?
+
+    - alert: GuidingWithoutImaging
+      expr: guiding:status:is_guiding > on(host) imaging:is_exposing
+      for: 5m
+      labels:
+        severity: critical
+      annotations:
+        message: Guiding but not taking images.  Possibly NINA froze?
 
     - alert: WaitForAltitude
       expr: nina_status{item="WaitForAltitude"} * on(job) 
