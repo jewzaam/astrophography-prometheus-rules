@@ -223,3 +223,18 @@ groups:
         severity: critical
       annotations:
         message: Imaging is stuck somehow, probably need to restart NINA.
+
+    - alert: CouldBeImaging
+      expr: (
+              device:telescope:is_connected * on(host) max without(item) (nina_status{item=~".*Container"}) == bool 0 > 0
+            ) AND on()
+            (
+              condition:is_night * on(latitude,longitude) 
+              sgn(max without(source) (weather_clouds{when="now"}) < 90) * on(latitude,longitude) 
+              sgn((timeOfDay_begin_day - time()) / 60 / 60>1.0)
+            )
+      for: 5m
+      labels:
+        severity: critical
+      annotations:
+        message: Scope is connected, at least 1 hour of night is left, it is not overcast, but no sequence is running.
