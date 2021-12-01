@@ -153,9 +153,20 @@ groups:
         message: "Focuser failed to autofocus.  Reverted to previous focus position.  Likely indicator of obstruction: clouds, tree, house."
 
     - alert: FailedToSaveImage
-      expr: device:telescope:is_connected>0 AND on(host)
+      expr: device:telescope:is_connected * on(host)
             rate(nina_error_total{module="Camera",type="TakeExposure"}[15m]) > 0
             # don't limit to night, could be taking daytime images!
+      for: 1m
+      labels:
+        severity: critical
+      annotations:
+        message: Unable to save images.  Stop sequence and try to save snapshot.  Might need to reconnect cameras.
+
+    - alert: FailedToSaveImage
+      expr: device:telescope:is_connected * on(host)
+            (nina_error_total{module="Camera",type="TakeExposure"} == 1) > 0
+            # don't limit to night, could be taking daytime images!
+            # (variant that accounts for rate being zero if metric created with value of 1)
       for: 1m
       labels:
         severity: critical
