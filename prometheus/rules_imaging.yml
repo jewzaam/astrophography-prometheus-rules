@@ -167,9 +167,10 @@ groups:
             (nina_error_total{module="Camera",type="TakeExposure"} == 1) > 0
             # don't limit to night, could be taking daytime images!
             # (variant that accounts for rate being zero if metric created with value of 1)
+            # ((warning because we should catch now that the error total for take exposure is initliazed to 0, so rate will work))
       for: 1m
       labels:
-        severity: critical
+        severity: warning
       annotations:
         message: Unable to save images.  Stop sequence and try to save snapshot.  Might need to reconnect cameras.
 
