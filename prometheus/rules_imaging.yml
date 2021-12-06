@@ -144,7 +144,7 @@ groups:
 
     - alert: FailedToAutoFocus
       expr: device:telescope:is_connected>0 AND on(host)
-            rate(nina_error_total{module="Focuser",type="RunAutofocus"}[5m]) > 0 AND on()
+            rate(nina_error_total{module="Focuser",type="RunAutofocus"}[15m]) > 0 AND on()
             condition:is_night > 0
       for: 1m
       labels:
