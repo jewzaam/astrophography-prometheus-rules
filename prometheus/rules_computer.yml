@@ -30,7 +30,7 @@ groups:
 
     - alert: ComputerOffline
       expr: computer:was_connected > 0 and on(job) 
-            device:telescope:was_connected > 0 and on() 
+            device:telescope:was_connected > 0 and on(job)
             absent(computer:is_connected)
       for: 5m
       labels:
