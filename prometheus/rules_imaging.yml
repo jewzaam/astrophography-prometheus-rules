@@ -40,6 +40,15 @@ groups:
         message: |
           High rate of errors in imaging software.
 
+    - alert: NinaSideOfPierMissing
+      expr: rate(nina_error_total{module="Telescope",type="SideOfPier"}[1m]))>0
+      for: 5m
+      labels:
+        severity: critical
+      annotations:
+        message: |
+          NINA is unable to get SideOfPier property from telescope.  Usual fix is full power cycle the rig.
+
     - alert: ImagingUserInputWarning
       expr: imaging:is_sequence_running>0 AND on(host)
             imaging:input:message>0 OR on(host)
