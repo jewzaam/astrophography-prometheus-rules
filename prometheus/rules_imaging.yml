@@ -41,7 +41,7 @@ groups:
           High rate of errors in imaging software.
 
     - alert: NinaSideOfPierMissing
-      expr: rate(nina_error_total{module="Telescope",type="SideOfPier"}[1m]))>0
+      expr: rate(nina_error_total{module="Telescope",type="SideOfPier"}[1m])>0
       for: 5m
       labels:
         severity: critical
