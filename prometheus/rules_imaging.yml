@@ -51,10 +51,15 @@ groups:
 
     - alert: ImagingUserInputWarning
       expr: imaging:is_sequence_running>0 AND on(host)
-            imaging:input:message>0 OR on(host)
-            imaging:input:rotate>0 OR on(host)
-            imaging:input:polar_alignment>0 OR on(host)
-            imaging:input:filter>0
+            imaging:input:message>0 
+            # These are noise, contributing to alert fatigue.
+            # Filter changes are automated now.  Device issues will trigger.
+            # I have a message before PA.  I am at the scope.
+            # And rotation is done right after PA.  I am at the scope.
+            # OR on(host)
+            #imaging:input:rotate>0 OR on(host)
+            #imaging:input:polar_alignment>0 OR on(host)
+            #imaging:input:filter>0
       for: 2m
       labels:
         severity: warning
