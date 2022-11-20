@@ -29,16 +29,14 @@ groups:
           Can be caused by a rogue process like virus scanning.
 
     - alert: ComputerOffline
-      expr: computer:was_connected > 0 and on(job) 
-            device:telescope:was_connected > 0 and on()
-            absent(computer:is_connected)
+      expr: computer:was_connected{host!=""} UNLESS on(host)
+            computer:is_connected
       for: 5m
       labels:
         severity: critical
       annotations:
         message: |
           Computer "{{ .Labels.Instance }}" is offline.
-          Computer was connected and telescope was connected.
           If the computer should be running, it has crashed.  Go restart it.
 
 

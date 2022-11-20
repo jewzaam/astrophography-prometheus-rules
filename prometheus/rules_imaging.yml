@@ -3,6 +3,8 @@ groups:
     rules:
     - record: imaging:is_sequence_running
       expr: sum without(item) (nina_status{item=~".*Container.*"})>0
+    - record: imaging:was_sequence_running
+      expr: avg_over_time(imaging:is_sequence_running[30m])
     - record: imaging:is_exposing
       expr: nina_status{item="TakeExposure"}
     - record: imaging:was_exposing
@@ -32,7 +34,7 @@ groups:
 
     - alert: ImagingHighErrorRate
       expr: imaging:is_sequence_running>0 AND on(instance,host)
-            sum by(instance,host) (rate(nina_error_total[1m]))>0
+            sum by(instance,host) (rate(nina_error_total{code!="settle"}[10m]))>0
       for: 5m
       labels:
         severity: warning
@@ -125,7 +127,10 @@ groups:
           Fix this to get proper centering.
 
     - alert: AutofocusNotRun2h
-      expr: imaging:is_sequence_running AND on(host) (device:telescope:is_connected * on(host) nina_status{item="RunAutofocus"} == 0)
+      expr: imaging:is_sequence_running>0 AND on(host) 
+            device:telescope:is_connected>0 AND on(host) 
+            nina_status{item="RunAutofocus"} == 0 AND on(job)
+            condition:is_night>0
       for: 120m
       labels:
         severity: critical
@@ -143,7 +148,7 @@ groups:
         severity: warning
       annotations:
         message: |
-          Autofocus is bad, R^2 average is less than 0.8.
+          Autofocus is bad, R^2 average is less than 0.7.
           This should mean AF will use previous settings and image quality may be impacated.
 
     - alert: FocuserTemperatureLow
@@ -167,9 +172,9 @@ groups:
         message: "Focuser failed to autofocus.  Reverted to previous focus position.  Likely indicator of obstruction: clouds, tree, house."
 
     - alert: FailedToSaveImage
-      expr: device:telescope:is_connected * on(host)
-            rate(nina_error_total{module="Camera",type="TakeExposure"}[15m]) > 0
-            # don't limit to night, could be taking daytime images!
+      expr: rate(nina_error_total{module="Camera",type="TakeExposure"}[15m]) > 0
+            # don't limit to night, could be taking daytime images.
+            # don't limit to connected to telescope, could be taking calibration images.
       for: 1m
       labels:
         severity: critical
