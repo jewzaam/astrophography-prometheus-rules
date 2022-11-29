@@ -151,6 +151,18 @@ groups:
           Autofocus is bad, R^2 average is less than 0.7.
           This should mean AF will use previous settings and image quality may be impacated.
 
+    - alert: FocusDegraded
+      expr: nina_detect{type="HFR"} * on(host) 
+            (1-nina_status{item="RunAutofocus"}) - on(host) 
+            avg_over_time(nina_detect{type="HFR"}[1h]) > 1
+      for: 15m
+      labels:
+        severity: warning
+      annotations: 
+        message: |
+          Focus has degraded for a while.  It will eventually correct with AF but ideally should be fixed now.
+          NOTE this is not a critial warning because it is expected AF will trigger eventually to correct the problem.
+
     - alert: FocuserTemperatureLow
       expr: device:telescope:is_connected>0 AND on(host)
             nina_status{category="Focuser",item="Temperature"} < -50 AND on()
