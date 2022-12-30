@@ -195,7 +195,7 @@ groups:
 
     - alert: UncooledImaging
       expr: imaging:is_exposing * on(host) 
-            device:camera:temperature{name!~".*Mini.*"}>0 # not(guide camera)
+            device:camera:temperature{name!~".*(MC-S|Mini|Canon|Nikon|Sony).*"}>0 # exclude cameras that won't cool
       for: 1m
       labels:
         severity: critical
