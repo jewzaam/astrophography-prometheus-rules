@@ -22,3 +22,13 @@ groups:
       annotations:
         message: |
           Guiding is enabled but no scope is connected.
+
+    - alert: ExcessiveAutoFocus
+      expr: max(avg_over_time(nina_status{item="RunAutofocus"}[30m]) * on(host,camera) 
+            group_left avg_over_time(nina_status{item="NINA.Sequencer.Container.TargetAreaContainer"}[30m])) > 0.1
+      labels:
+        severity: critical
+      annotations:
+        message: |
+          Autofocus is taking more than 10% of imaging time.  Possibly temperature probe is mis-reporting temperature changes.
+
