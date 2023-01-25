@@ -204,7 +204,9 @@ groups:
 
     - alert: UnguidedImaging
       expr: (nina_status{item=~".*DeepSkyObjectContainer"} - on(host) 
-              max by(host) (nina_status{category="Telescope",item=~"Center.*"}))
+              max by(host) (nina_status{category="Telescope",item=~"Center.*"}) - on(host)
+              nina_status{item="MeridianFlip"}
+            )
             * on(host) 
             (guiding:status:is_guiding == bool 0) > 0
       for: 5m
@@ -250,7 +252,9 @@ groups:
         message: Waiting for target too long.  Probably misconfigured sequence conditions.
 
     - alert: ImagingStuck
-      expr: nina_status{item!="TakeExposure",item=~".*Exposure"} > on(instance) nina_status{item="TakeExposure"}
+      expr: (1 - nina_status{item="MeridianFlip"} * on(instance)
+              nina_status{item!="TakeExposure",item=~".*Exposure"}) > on(instance) 
+              nina_status{item="TakeExposure"} 
       for: 5m
       labels:
         severity: critical
