@@ -194,7 +194,7 @@ groups:
         message: Unable to save images.  Stop sequence and try to save snapshot.  Might need to reconnect cameras.
 
     - alert: UncooledImaging
-      expr: imaging:is_exposing * on(host) 
+      expr: imaging:was_exposing * on(host) 
             device:camera:temperature{name!~".*(MC-S|Mini|Canon|Nikon|Sony).*"}>0 # exclude cameras that won't cool
       for: 1m
       labels:
