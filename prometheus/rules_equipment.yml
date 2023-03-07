@@ -25,7 +25,7 @@ groups:
 
     - alert: ExcessiveAutoFocus
       expr: max(avg_over_time(nina_status{item="RunAutofocus"}[1h]) * on(host,camera) 
-            group_left avg_over_time(nina_status{item="NINA.Sequencer.Container.TargetAreaContainer"}[1h])) > 0.1
+            group_left avg_over_time(nina_status{item="NINA.Sequencer.Container.TargetAreaContainer"}[1h])) > 0.2
       labels:
         severity: critical
       annotations:
