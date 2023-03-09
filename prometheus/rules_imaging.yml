@@ -252,9 +252,8 @@ groups:
         message: Waiting for target too long.  Probably misconfigured sequence conditions.
 
     - alert: ImagingStuck
-      expr: (1 - nina_status{item="MeridianFlip"} * on(instance)
-              nina_status{item!="TakeExposure",item=~".*Exposure"}) > on(instance) 
-              nina_status{item="TakeExposure"} 
+      expr: ((1 - max by(instance) (nina_status{category=~"(Focuser|Telescope)",item=~"(RunAutofocus|.*Center.*|.*Slew.*|MeridianFlip)"})) * on(instance)
+              nina_status{item!="TakeExposure",item=~".*Exposure"}) > on(instance)  nina_status{item="TakeExposure"} 
       for: 5m
       labels:
         severity: critical
