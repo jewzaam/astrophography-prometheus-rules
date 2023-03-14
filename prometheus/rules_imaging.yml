@@ -260,6 +260,15 @@ groups:
       annotations:
         message: Imaging is stuck somehow, probably need to restart NINA.
 
+    - alert: CameraStuck
+      expr: device:telescope:is_connected * on(host) group_right 
+            rate(nina_error_total{type=~"Capture.*"}[5m]) > 0
+      for: 15m
+      labels:
+        severity: critical
+      annotations:
+        message: Errors capturing images.  Likely unable to download images.  Reboot camera.
+
     - alert: CouldBeImaging
       expr: (
               device:telescope:is_connected * on(host) max without(item) (nina_status{item=~".*Container"}) == bool 0 > 0
