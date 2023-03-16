@@ -5,50 +5,31 @@ groups:
       expr: min without(job) (rate(weather_success_total{source="openweathermap"}[6m]))
     - record: weather:is_connected:darksky
       expr: min without(job) (rate(weather_success_total{source="darksky"}[2m]))
+    - record: weather:is_connected:openweathermap
+      expr: min without(job) (rate(weather_success_total{source="openweathermap"}[2m]))
 
     - alert: PrecipitationChance
       expr: device:telescope:was_connected * on()
-            max(weather_precip_probability{source="darksky",when=~"now|[+]1h"})>3
+            max(weather_precip_probability{source="openweathermap",when=~"now|[+]1h"})>3
       for: 0m
       labels:
         severity: critical
       annotations:
         message: Chance of rain is {{ .Value }}%.  Look at other weather sources and decide...
 
-    - alert: PrecipitationNow
-      expr: device:telescope:was_connected * on()
-            max without(when) (weather_precip_intensity{source="darksky",when="now"})>0
-      for: 0m
-      labels:
-        severity: critical
-      annotations:
-        message: It is likely already raining ({{ .Value }}mm)!  Shut it down!
-
     - alert: PrecipitationSoon
       expr: device:telescope:was_connected * on()
-            max without(when) (weather_precip_intensity{source="darksky",when="+1h"})>0
+            max without(when) (weather_precip_intensity{source="openweathermap",when="+1h"})>0
       for: 0m
       labels:
         severity: critical
       annotations:
         message: It is likely to rain soon ({{ .Value }}mm)!  Consider shutting it down.
 
-    - alert: UnexpectedPrecipitation
-      expr: absent(weather_precip_probability{source="darksky",when=~"now|[+]1h"}>0) AND on(latitude,longitude)
-            weather_precip_intensity{source="darksky",when="now"}>0 AND on()
-            absent(device:telescope:is_connected>0)
-      for: 0m
-      labels:
-        severity: warning
-      annotations:
-        message: |
-          It is raining without a chance of rain.
-          If anything important is outside go protect it.
-          This is a warning because it fires only when equipment isn't connected.
 
     - alert: DisruptiveWind
       expr: device:telescope:is_connected * on()
-            max without(when,unit,type) (weather_wind{source="darksky",when=~"now|[+]1h",unit="kph"})>10
+            max without(when,unit,type) (weather_wind{source="openweathermap",when=~"now|[+]1h",unit="kph"})>10
       for: 5m
       labels:
         severity: warning
@@ -56,7 +37,7 @@ groups:
         message: Moderatly high winds, {{ .Value }} kph, can disrupt imaging and cause elongated stars.
 
     - alert: ExtremeWind
-      expr: max without(when,unit,type) (weather_wind{source="darksky",when=~"now|[+]1hr",unit="kph"})>32
+      expr: max without(when,unit,type) (weather_wind{source="openweathermap",when=~"now|[+]1hr",unit="kph"})>32
       for: 5m
       labels:
         severity: critical
@@ -64,7 +45,7 @@ groups:
         message: Extremely high winds, {{ .Value }} kph, can cause damage to equipment.  Move what you can inside.
 
     - alert: WeatherCollectionFailureWarning
-      expr: absent(weather:is_connected:darksky>0) and on()
+      expr: absent(weather:is_connected:openweathermap>0) and on()
             absent(device:telescope:was_connected>0)
       for: 10m # we're rate limited, give it time to collect new metrics on restart
       labels:
@@ -75,7 +56,7 @@ groups:
           Check that host is running, it has network access, API key for Dark Sky is working, etc.
 
     - alert: WeatherCollectionFailureCritical
-      expr: absent(weather:is_connected:darksky>0) and on()
+      expr: absent(weather:is_connected:openweathermap>0) and on()
             device:telescope:was_connected>0
       for: 4m # we're rate limited, pull metrics every 100s.  and alert is based on rate of change.  so give it time to recover
       labels:
