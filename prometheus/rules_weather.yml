@@ -18,8 +18,9 @@ groups:
         message: Chance of rain is {{ .Value }}%.  Look at other weather sources and decide...
 
     - alert: PrecipitationSoon
-      expr: device:telescope:was_connected * on()
-            max without(when) (weather_precip_intensity{source="openweathermap",when="+1h"})>0
+      expr: device:telescope:was_connected * on() 
+            max without(when) (weather_precip_intensity{source="openweathermap",when="+1h"}) * on()
+            max without(when) (weather_precip_probability{source="openweathermap",when="+1h"}) > 0
       for: 0m
       labels:
         severity: critical
