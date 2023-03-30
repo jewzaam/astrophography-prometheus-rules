@@ -31,3 +31,13 @@ groups:
       annotations:
         message: Guiding is stuck dithering or settling.  This can indicate guiding software has crashed.
 
+    - alert: GuidingWithoutTracking
+      expr: guiding:status:is_guiding > 0 
+            AND on(host) 
+            device:telescope:is_connected > 0 
+            AND on(host) 
+            device:telescope:is_tracking == 0
+      labels:
+        severity: critical
+      annotations:
+        message: Guiding while tracking is disabled.  Possibly mount halted due to past meridian.
