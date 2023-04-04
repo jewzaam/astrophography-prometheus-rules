@@ -2,9 +2,9 @@ groups:
   - name: computer
     rules:
     - record: computer:is_connected
-      expr: clamp(sum without(core,mode) (rate(windows_cpu_time_total[1m])>0),1,1)
+      expr: clamp(sum without(core,mode) (rate(windows_cpu_time_total[1m])>0),1,1) OR on(host) (clamp(sum without(core,mode) (rate(windows_cpu_time_total[12h]))-10,0,0))
     - record: computer:was_connected
-      expr: clamp(sum without(core,mode) (rate(windows_cpu_time_total[30m])>0),1,1)
+      expr: clamp(sum without(core,mode) (rate(windows_cpu_time_total[30m])>0),1,1) OR on(host) (clamp(sum without(core,mode) (rate(windows_cpu_time_total[12h]))-10,0,0))
 
     - alert: ComputerHighTemperature
       expr: computer:is_connected * on(instance)
