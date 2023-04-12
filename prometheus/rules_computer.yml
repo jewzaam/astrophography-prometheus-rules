@@ -29,8 +29,7 @@ groups:
           Can be caused by a rogue process like virus scanning.
 
     - alert: ComputerOffline
-      expr: computer:was_connected{host!=""} UNLESS on(host)
-            computer:is_connected
+      expr: computer:was_connected > 0 and on(host) computer:is_connected == 0
       for: 5m
       labels:
         severity: critical
