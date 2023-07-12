@@ -194,9 +194,9 @@ groups:
         message: Unable to save images.  Stop sequence and try to save snapshot.  Might need to reconnect cameras.
 
     - alert: UncooledImaging
-      expr: imaging:was_exposing * on(host)                                     # taking pictures
-            nina_status{item=~".*DeepSkyObjectContainer"} * on(host)            # of a deep sky object
-            device:camera:temperature{name!~".*(MC-S|Mini|Canon|Nikon|Sony).*"} # with a camera that can cool
+      expr: imaging:was_exposing * on(host)            
+            nina_status{item=~".*DeepSkyObjectContainer"} * on(host)
+            device:camera:temperature{name!~".*(MC-S|Mini|Canon|Nikon|Sony).*"}
       for: 1m
       labels:
         severity: critical
