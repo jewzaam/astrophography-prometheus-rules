@@ -7,6 +7,8 @@ groups:
       expr: avg_over_time(imaging:is_sequence_running[30m])
     - record: imaging:is_exposing
       expr: nina_status{item="TakeExposure"}
+    - record: imaging:is_focusing
+      expr: nina_status{item="RunAutofocus"}
     - record: imaging:was_exposing
       expr: max without(time,gain,filter,offset,binning) (clamp(rate(nina_exposure_total[30m])>0,1,1))>0
     - record: imaging:wait:altitude
@@ -196,7 +198,7 @@ groups:
     - alert: UncooledImaging
       expr: imaging:was_exposing * on(host)            
             nina_status{item=~".*DeepSkyObjectContainer"} * on(host)
-            device:camera:temperature{name!~".*(MC-S|Mini|Canon|Nikon|Sony).*"}
+            device:camera:temperature{name!~".*(MC-S|Mini|Canon|Nikon|Sony).*"} > 0
       for: 1m
       labels:
         severity: critical
@@ -236,7 +238,7 @@ groups:
         message: Guiding but not taking images.  Possibly NINA not running?
 
     - alert: GuidingWithoutImaging
-      expr: guiding:status:is_guiding > on(host) imaging:is_exposing
+      expr: guiding:status:is_guiding > on(host) (imaging:is_exposing + on(host) imaging:is_focusing)
       for: 5m
       labels:
         severity: critical

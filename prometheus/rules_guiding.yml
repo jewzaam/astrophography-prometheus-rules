@@ -2,6 +2,16 @@ groups:
   - name: guiding
     rules:
 
+    - alert: StartGuidingLostStars
+      expr: device:telescope:is_connected>0 AND on(host)
+            nina_status{item="StartGuiding"}>0 AND on(host)
+            guiding:status:lost_stars>0
+      for: 2m
+      labels:
+        severity: critical
+      annotations:
+        message: Guiding has lost stars when starting guiding.  Possibly calibration caused guide star to drift.
+
     - alert: GuidingLostStars
       expr: device:telescope:is_connected>0 AND on(host)
             imaging:is_exposing>0 AND on(host)
