@@ -24,6 +24,15 @@ groups:
     - record: imaging:error:plate_solve
       expr: max by(host,instance) (rate(nina_error_total{module=~"ASTAP.*"}[5m]))>0
 
+    - alert: ASTAPSolverFailed
+      expr: computer:is_connected AND on(host)
+            rate(nina_error_total{module=~"ASTAPSolver.*"}[5m])>0
+      for: 5m
+      labels:
+        severity: critical
+      annotations:
+        message: ASTAP is not able to solve images on host "{{ .Labels.Host }}", check mount limits and tracking.
+
     - alert: ImagingCrashed
       expr: imaging:is_sequence_running>0 AND on(host)
             imaging:wait:altitude==0 AND on(host)
