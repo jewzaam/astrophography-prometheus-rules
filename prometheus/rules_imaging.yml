@@ -2,25 +2,25 @@ groups:
   - name: imaging
     rules:
     - record: imaging:is_sequence_running
-      expr: sum without(item) (nina_status{item=~".*Container.*"})>0
+      expr: sum without(item) (nina_status{category!~".*Instruction Set.*",item=~".*Container.*"})>0
     - record: imaging:was_sequence_running
       expr: avg_over_time(imaging:is_sequence_running[30m])
     - record: imaging:is_exposing
-      expr: nina_status{item="TakeExposure"}
+      expr: nina_status{category!~".*Instruction Set.*",item="TakeExposure"}
     - record: imaging:is_focusing
-      expr: nina_status{item="RunAutofocus"}
+      expr: nina_status{category!~".*Instruction Set.*",item="RunAutofocus"}
     - record: imaging:was_exposing
       expr: max without(time,gain,filter,offset,binning) (clamp(rate(nina_exposure_total[30m])>0,1,1))>0
     - record: imaging:wait:altitude
-      expr: sum without(item) (nina_status{item=~"WaitFor.*Altitude"})>0
+      expr: sum without(item) (nina_status{category!~".*Instruction Set.*",item=~"WaitFor.*Altitude"})>0
     - record: imaging:input:message
-      expr: nina_status{category="Utility",item=~"MessageBox.*"}>0
+      expr: nina_status{category!~".*Instruction Set.*",category="Utility",item=~"MessageBox.*"}>0
     - record: imaging:input:rotate
-      expr: nina_status{category="Telescope",item=~".*Rotate"}>0
+      expr: nina_status{category!~".*Instruction Set.*",category="Telescope",item=~".*Rotate"}>0
     - record: imaging:input:polar_alignment
-      expr: nina_status{category="Polar Alignment",item="PolarAlignment"}>0
+      expr: nina_status{category!~".*Instruction Set.*",category="Polar Alignment",item="PolarAlignment"}>0
     - record: imaging:input:filter
-      expr: nina_status{category="Filter Wheel",item="SwitchFilter"}>0
+      expr: nina_status{category!~".*Instruction Set.*",category="Filter Wheel",item="SwitchFilter"}>0
     - record: imaging:error:plate_solve
       expr: max by(host,instance) (rate(nina_error_total{module=~"ASTAP.*"}[5m]))>0
 
@@ -102,8 +102,8 @@ groups:
     - alert: GeneralPlateSolveFailed
       expr: device:telescope:is_connected>0 AND on(host)
             imaging:error:plate_solve>0 AND on(host)
-            absent(nina_status{item="MeridianFlip"}>0) AND on(host)
-            absent(nina_status{item=~"Center.*"}>0)
+            absent(nina_status{category!~".*Instruction Set.*",item="MeridianFlip"}>0) AND on(host)
+            absent(nina_status{category!~".*Instruction Set.*",item=~"Center.*"}>0)
       for: 0m
       labels:
         severity: warning
@@ -114,7 +114,7 @@ groups:
     - alert: CenterPlateSolveFailed
       expr: device:telescope:is_connected>0 AND on(host)
             imaging:error:plate_solve>0 AND on(host)
-            nina_status{item=~"Center.*"}>0
+            nina_status{category!~".*Instruction Set.*",item=~"Center.*"}>0
       for: 15m
       labels:
         severity: critical
@@ -127,7 +127,7 @@ groups:
     - alert: MeridianFlipPlateSolveFailed
       expr: device:telescope:is_connected>0 AND on(host)
             imaging:error:plate_solve>0 AND on(host)
-            nina_status{item="MeridianFlip"}>0
+            nina_status{category!~".*Instruction Set.*",item="MeridianFlip"}>0
       for: 15m
       labels:
         severity: critical
@@ -140,7 +140,7 @@ groups:
     - alert: AutofocusNotRun2h
       expr: imaging:is_sequence_running>0 AND on(host) 
             device:telescope:is_connected>0 AND on(host) 
-            nina_status{item="RunAutofocus"} == 0 AND on(job)
+            nina_status{category!~".*Instruction Set.*",item="RunAutofocus"} == 0 AND on(job)
             condition:is_night>0
       for: 120m
       labels:
@@ -164,7 +164,7 @@ groups:
 
     - alert: FocusDegraded
       expr: nina_detect{type="HFR"} * on(host) 
-            (1-nina_status{item="RunAutofocus"}) - on(host) 
+            (1-nina_status{category!~".*Instruction Set.*",item="RunAutofocus"}) - on(host) 
             avg_over_time(nina_detect{type="HFR"}[1h]) > 1
       for: 15m
       labels:
@@ -176,7 +176,7 @@ groups:
 
     - alert: FocuserTemperatureLow
       expr: device:telescope:is_connected>0 AND on(host)
-            nina_status{category="Focuser",item="Temperature"} < -50 AND on()
+            nina_status{category!~".*Instruction Set.*",category="Focuser",item="Temperature"} < -50 AND on()
             condition:is_night>0
       for: 1m
       labels:
@@ -206,7 +206,7 @@ groups:
 
     - alert: UncooledImaging
       expr: imaging:was_exposing * on(host)            
-            nina_status{item=~".*DeepSkyObjectContainer"} * on(host)
+            nina_status{category!~".*Instruction Set.*",item=~".*DeepSkyObjectContainer"} * on(host)
             device:camera:temperature{name!~".*(MC-S|Mini|Canon|Nikon|Sony).*"} > 0
       for: 1m
       labels:
@@ -215,9 +215,9 @@ groups:
         message: Taking image but camera sensor is warm.  Did cooling get skipped?
 
     - alert: UnguidedImaging
-      expr: (nina_status{item=~".*DeepSkyObjectContainer"} - on(host) 
-              max by(host) (nina_status{category="Telescope",item=~"Center.*"}) - on(host)
-              nina_status{item="MeridianFlip"}
+      expr: (nina_status{category!~".*Instruction Set.*",item=~".*DeepSkyObjectContainer"} - on(host) 
+              max by(host) (nina_status{category!~".*Instruction Set.*",category="Telescope",item=~"Center.*"}) - on(host)
+              nina_status{category!~".*Instruction Set.*",item="MeridianFlip"}
             )
             * on(host) 
             (guiding:status:is_guiding == bool 0) > 0
@@ -228,8 +228,8 @@ groups:
         message: Taking image of DSO but not guiding.  Guiding crashed or was missed in sequence.
 
     - alert: UnguidedImaging
-      expr: (nina_status{item=~".*DeepSkyObjectContainer"} - on(host) 
-              max by(host) (nina_status{category="Telescope",item=~"Center.*"}))
+      expr: (nina_status{category!~".*Instruction Set.*",item=~".*DeepSkyObjectContainer"} - on(host) 
+              max by(host) (nina_status{category!~".*Instruction Set.*",category="Telescope",item=~"Center.*"}))
             * on() 
             absent(guiding:status:is_guiding) > 0
       for: 5m
@@ -264,8 +264,8 @@ groups:
         message: Waiting for target too long.  Probably misconfigured sequence conditions.
 
     - alert: ImagingStuck
-      expr: ((1 - max by(host) (nina_status{category=~"(Focuser|Telescope)",item=~"(RunAutofocus|.*Center.*|.*Slew.*|MeridianFlip)"})) * on(host)
-              nina_status{item!="TakeExposure",item=~".*Exposure"}) > on(host) nina_status{item="TakeExposure"} 
+      expr: ((1 - max by(host) (nina_status{category!~".*Instruction Set.*",category=~"(Focuser|Telescope)",item=~"(RunAutofocus|.*Center.*|.*Slew.*|MeridianFlip)"})) * on(host)
+              nina_status{category!~".*Instruction Set.*",item!="TakeExposure",item=~".*Exposure"}) > on(host) nina_status{category!~".*Instruction Set.*",item="TakeExposure"} 
       for: 5m
       labels:
         severity: critical
@@ -282,7 +282,7 @@ groups:
 
     - alert: CouldBeImaging
       expr: (
-              device:telescope:is_connected * on(host) max without(item) (nina_status{item=~".*Container"}) == bool 0 > 0
+              device:telescope:is_connected * on(host) max without(item) (nina_status{category!~".*Instruction Set.*",item=~".*Container"}) == bool 0 > 0
             ) AND on()
             (
               condition:is_night * on(latitude,longitude) 

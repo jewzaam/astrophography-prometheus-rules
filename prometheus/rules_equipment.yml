@@ -2,7 +2,7 @@ groups:
   - name: nina:meridian_flip
     rules:
     - record: nina:meridian_flip:in_progress
-      expr: nina_status{item="MeridianFlip"}>0 #used to use telescope tracking, but it is disabled when slewing and resets pending alert timers
+      expr: nina_status{category!~".*Instruction Set.*",item="MeridianFlip"}>0 #used to use telescope tracking, but it is disabled when slewing and resets pending alert timers
 
   - name: nina:alerts
     rules:
@@ -24,8 +24,8 @@ groups:
           Guiding is enabled but no scope is connected.
 
     - alert: ExcessiveAutoFocus
-      expr: max by(host,camera) (avg_over_time(nina_status{item="RunAutofocus"}[1h]) * on(host,camera) 
-            group_left avg_over_time(nina_status{item="NINA.Sequencer.Container.TargetAreaContainer"}[1h])) > 0.2
+      expr: max by(host,camera) (avg_over_time(nina_status{category!~".*Instruction Set.*",item="RunAutofocus"}[1h]) * on(host,camera) 
+            group_left avg_over_time(nina_status{category!~".*Instruction Set.*",item="NINA.Sequencer.Container.TargetAreaContainer"}[1h])) > 0.2
       labels:
         severity: critical
       annotations:

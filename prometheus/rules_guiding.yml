@@ -4,7 +4,7 @@ groups:
 
     - alert: StartGuidingLostStars
       expr: device:telescope:is_connected>0 AND on(host)
-            nina_status{item="StartGuiding"}>0 AND on(host)
+            nina_status{category!~".*Instruction Set.*",item="StartGuiding"}>0 AND on(host)
             guiding:status:lost_stars>0
       for: 2m
       labels:
