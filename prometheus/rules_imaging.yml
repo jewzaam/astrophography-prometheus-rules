@@ -255,8 +255,8 @@ groups:
         message: Guiding but not taking images.  Possibly NINA froze?
 
     - alert: WaitForAltitude
-      expr: nina_status{item="WaitForAltitude"} * on(job) 
-            condition:is_night > 0
+      expr: nina_status{category!~".*Instruction Set.*",item="WaitForAltitude"} * 
+            on(job) group_left condition:is_night > 0
       for: 10m
       labels:
         severity: critical
@@ -264,8 +264,8 @@ groups:
         message: Waiting for target too long.  Probably misconfigured sequence conditions.
 
     - alert: ImagingStuck
-      expr: ((1 - max by(instance) (nina_status{category=~"(Focuser|Telescope)",item=~"(RunAutofocus|.*Center.*|.*Slew.*|MeridianFlip)"})) * on(instance)
-              nina_status{item!="TakeExposure",item=~".*Exposure"}) > on(instance)  nina_status{item="TakeExposure"} 
+      expr: ((1 - max by(host) (nina_status{category=~"(Focuser|Telescope)",item=~"(RunAutofocus|.*Center.*|.*Slew.*|MeridianFlip)"})) * on(host)
+              nina_status{item!="TakeExposure",item=~".*Exposure"}) > on(host) nina_status{item="TakeExposure"} 
       for: 5m
       labels:
         severity: critical

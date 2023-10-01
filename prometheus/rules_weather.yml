@@ -1,8 +1,6 @@
 groups:
   - name: weather:is_connected
     rules:
-    - record: weather:is_connected:openweathermap
-      expr: min without(job) (rate(weather_success_total{source="openweathermap"}[6m]))
     - record: weather:is_connected:darksky
       expr: min without(job) (rate(weather_success_total{source="darksky"}[2m]))
     - record: weather:is_connected:openweathermap
