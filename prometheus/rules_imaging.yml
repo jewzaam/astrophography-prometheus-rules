@@ -298,7 +298,7 @@ groups:
     - alert: ExcessiveWait
       expr: device:telescope:is_connected * on(host)
             max by(host) (nina_status{category!="Camera",category!~".*Instruction Set.*",item=~"Wait.*"}) * on(host)
-            max without(item) (nina_status{item=~".*Container"})
+            max without(item) (nina_status{item=~"DeepSky.*Container"})
       for: 10m
       labels:
         severity: critical
