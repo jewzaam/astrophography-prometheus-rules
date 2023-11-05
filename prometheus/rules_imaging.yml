@@ -282,7 +282,7 @@ groups:
 
     - alert: CouldBeImaging
       expr: (
-              device:telescope:is_connected * on(host) max without(item) (nina_status{category!~".*Instruction Set.*",item=~".*Container"}) == bool 0 > 0
+              device:telescope:is_connected * on(host) max without(item) (nina_status{item=~".*Container"}) == bool 0 > 0
             ) AND on()
             (
               condition:is_night * on(latitude,longitude) 
@@ -294,3 +294,13 @@ groups:
         severity: critical
       annotations:
         message: Scope is connected, at least 1 hour of night is left, it is not overcast, but no sequence is running.
+
+    - alert: ExcessiveWait
+      expr: device:telescope:is_connected * on(host)
+            max by(host) (nina_status{category!="Camera",category!~".*Instruction Set.*",item=~"Wait.*"}) * on(host)
+            max without(item) (nina_status{item=~".*Container"})
+      for: 10m
+      labels:
+        severity: critical
+      annotations:
+        message: Waiting for a long time, sequence is stuck somehow.
