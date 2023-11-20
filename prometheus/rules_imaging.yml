@@ -295,6 +295,24 @@ groups:
       annotations:
         message: Scope is connected, at least 1 hour of night is left, it is not overcast, but no sequence is running.
 
+    - alert: TargetSchedulerStuck
+      expr: (
+              device:telescope:is_connected * on(host) 
+              nina_status{item=~".*TargetAreaContainer"} * on(host)
+              nina_status{item="TakeExposure",category="Scheduler"}
+            ) == bool 0 > 0
+            AND on()
+            (
+              condition:is_night * on(latitude,longitude) 
+              sgn(max without(source) (weather_clouds{when="now"}) < 90) * on(latitude,longitude) 
+              sgn((timeOfDay_begin_day - time()) / 60 / 60>1.0)
+            )
+      for: 5m
+      labels:
+        severity: critical
+      annotations:
+        message: Target Scheduler plugin is stuck.  May need to restart NINA.
+
     - alert: ExcessiveWait
       expr: device:telescope:is_connected * on(host)
             max by(host) (nina_status{category!="Camera",category!~".*Instruction Set.*",item=~"Wait.*"}) * on(host)
