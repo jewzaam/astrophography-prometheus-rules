@@ -309,7 +309,7 @@ groups:
             )
       for: 5m
       labels:
-        severity: critical
+        severity: warning
       annotations:
         message: Target Scheduler plugin is stuck.  May need to restart NINA.
 
