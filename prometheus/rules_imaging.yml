@@ -206,7 +206,7 @@ groups:
 
     - alert: UncooledImaging
       expr: imaging:was_exposing * on(host)            
-            nina_status{category!~".*Instruction Set.*",item=~".*DeepSkyObjectContainer"} * on(host)
+            nina_status{category!~".*Instruction Set.*",item=~".*(TargetSchedulerContainer|DeepSkyObjectContainer)"} * on(host)
             device:camera:temperature{name!~".*(MC-S|Mini|Canon|Nikon|Sony).*"} > 0
       for: 1m
       labels:
@@ -215,7 +215,7 @@ groups:
         message: Taking image but camera sensor is warm.  Did cooling get skipped?
 
     - alert: UnguidedImaging
-      expr: (nina_status{category!~".*Instruction Set.*",item=~".*DeepSkyObjectContainer"} - on(host) 
+      expr: (nina_status{category!~".*Instruction Set.*",item=~".*(TargetSchedulerContainer|DeepSkyObjectContainer)"} - on(host) 
               max by(host) (nina_status{category!~".*Instruction Set.*",category="Telescope",item=~"Center.*"}) - on(host)
               nina_status{category!~".*Instruction Set.*",item="MeridianFlip"}
             )
@@ -228,7 +228,7 @@ groups:
         message: Taking image of DSO but not guiding.  Guiding crashed or was missed in sequence.
 
     - alert: UnguidedImaging
-      expr: (nina_status{category!~".*Instruction Set.*",item=~".*DeepSkyObjectContainer"} - on(host) 
+      expr: (nina_status{category!~".*Instruction Set.*",item=~".*(TargetSchedulerContainer|DeepSkyObjectContainer)"} - on(host) 
               max by(host) (nina_status{category!~".*Instruction Set.*",category="Telescope",item=~"Center.*"}))
             * on() 
             absent(guiding:status:is_guiding) > 0
