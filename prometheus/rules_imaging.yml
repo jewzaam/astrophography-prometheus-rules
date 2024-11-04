@@ -175,9 +175,7 @@ groups:
           NOTE this is not a critial warning because it is expected AF will trigger eventually to correct the problem.
 
     - alert: FocuserTemperatureLow
-      expr: device:telescope:is_connected>0 AND on(host)
-            nina_status{category!~".*Instruction Set.*",category="Focuser",item="Temperature"} < -50 AND on()
-            condition:is_night>0
+      expr: (device:telescope:is_connected > 0 and on (host) alpaca_focuser_temperature < -50 and on () condition:is_night) > 0
       for: 1m
       labels:
         severity: warning
