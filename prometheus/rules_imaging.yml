@@ -35,7 +35,6 @@ groups:
 
     - alert: ImagingCrashed
       expr: imaging:is_sequence_running>0 AND on(host)
-            imaging:wait:altitude==0 AND on(host)
             rate(nina_total[5m])==0
       for: 5m
       labels:
@@ -64,7 +63,7 @@ groups:
 
     - alert: ImagingUserInputWarning
       expr: imaging:is_sequence_running>0 AND on(host)
-            imaging:input:message>0 
+            imaging:input:message>0
             # These are noise, contributing to alert fatigue.
             # Filter changes are automated now.  Device issues will trigger.
             # I have a message before PA.  I am at the scope.
@@ -84,7 +83,7 @@ groups:
             imaging:wait:altitude==0 AND on(host)
             imaging:input:message>0 OR on(host)
             imaging:input:rotate>0 OR on(host)
-            imaging:input:filter>0 
+            imaging:input:filter>0
       for: 5m
       labels:
         severity: critical
@@ -138,8 +137,8 @@ groups:
           Fix this to get proper centering.
 
     - alert: AutofocusNotRun2h
-      expr: imaging:is_sequence_running>0 AND on(host) 
-            device:telescope:is_connected>0 AND on(host) 
+      expr: imaging:is_sequence_running>0 AND on(host)
+            device:telescope:is_connected>0 AND on(host)
             nina_status{category!~".*Instruction Set.*",item="RunAutofocus"} == 0 AND on(job)
             condition:is_night>0
       for: 120m
@@ -163,13 +162,13 @@ groups:
           This should mean AF will use previous settings and image quality may be impacated.
 
     - alert: FocusDegraded
-      expr: nina_detect{type="HFR"} * on(host) 
-            (1-nina_status{category!~".*Instruction Set.*",item="RunAutofocus"}) - on(host) 
+      expr: nina_detect{type="HFR"} * on(host)
+            (1-nina_status{category!~".*Instruction Set.*",item="RunAutofocus"}) - on(host)
             avg_over_time(nina_detect{type="HFR"}[1h]) > 1
       for: 15m
       labels:
         severity: warning
-      annotations: 
+      annotations:
         message: |
           Focus has degraded for a while.  It will eventually correct with AF but ideally should be fixed now.
           NOTE this is not a critial warning because it is expected AF will trigger eventually to correct the problem.
@@ -203,7 +202,7 @@ groups:
         message: Unable to save images.  Stop sequence and try to save snapshot.  Might need to reconnect cameras.
 
     - alert: UncooledImaging
-      expr: imaging:was_exposing * on(host)            
+      expr: imaging:was_exposing * on(host)
             nina_status{category!~".*Instruction Set.*",item=~".*(TargetSchedulerContainer|DeepSkyObjectContainer)"} * on(host)
             device:camera:temperature{camera!~".*(MC-S|Mini|Canon|Nikon|Sony).*"} > 0
       for: 1m
@@ -213,11 +212,11 @@ groups:
         message: Taking image but camera sensor is warm.  Did cooling get skipped?
 
     - alert: UnguidedImaging
-      expr: (nina_status{category!~".*Instruction Set.*",item=~".*(TargetSchedulerContainer|DeepSkyObjectContainer)"} - on(host) 
+      expr: (nina_status{category!~".*Instruction Set.*",item=~".*(TargetSchedulerContainer|DeepSkyObjectContainer)"} - on(host)
               max by(host) (nina_status{category!~".*Instruction Set.*",category="Telescope",item=~"Center.*"}) - on(host)
               nina_status{category!~".*Instruction Set.*",item="MeridianFlip"}
             )
-            * on(host) 
+            * on(host)
             (guiding:status:is_guiding == bool 0) > 0
       for: 5m
       labels:
@@ -226,9 +225,9 @@ groups:
         message: Taking image of DSO but not guiding.  Guiding crashed or was missed in sequence.
 
     - alert: UnguidedImaging
-      expr: (nina_status{category!~".*Instruction Set.*",item=~".*(TargetSchedulerContainer|DeepSkyObjectContainer)"} - on(host) 
+      expr: (nina_status{category!~".*Instruction Set.*",item=~".*(TargetSchedulerContainer|DeepSkyObjectContainer)"} - on(host)
               max by(host) (nina_status{category!~".*Instruction Set.*",category="Telescope",item=~"Center.*"}))
-            * on() 
+            * on()
             absent(guiding:status:is_guiding) > 0
       for: 5m
       labels:
@@ -253,7 +252,7 @@ groups:
         message: Guiding but not taking images.  Possibly NINA froze?
 
     - alert: WaitForAltitude
-      expr: nina_status{category!~".*Instruction Set.*",item="WaitForAltitude"} * 
+      expr: nina_status{category!~".*Instruction Set.*",item="WaitForAltitude"} *
             on(job) group_left condition:is_night > 0
       for: 10m
       labels:
@@ -263,7 +262,7 @@ groups:
 
     - alert: ImagingStuck
       expr: ((1 - max by(host) (nina_status{category!~".*Instruction Set.*",category=~"(Focuser|Telescope)",item=~"(RunAutofocus|.*Center.*|.*Slew.*|MeridianFlip)"})) * on(host)
-              nina_status{category!~".*Instruction Set.*",item!="TakeExposure",item=~".*Exposure"}) > on(host) nina_status{category!~".*Instruction Set.*",item="TakeExposure"} 
+              nina_status{category!~".*Instruction Set.*",item!="TakeExposure",item=~".*Exposure"}) > on(host) nina_status{category!~".*Instruction Set.*",item="TakeExposure"}
       for: 5m
       labels:
         severity: critical
@@ -271,7 +270,7 @@ groups:
         message: Imaging is stuck somehow, probably need to restart NINA.
 
     - alert: CameraStuck
-      expr: device:telescope:is_connected * on(host) group_right 
+      expr: device:telescope:is_connected * on(host) group_right
             rate(nina_error_total{type=~"Capture.*"}[5m]) > 0
       labels:
         severity: critical
@@ -283,8 +282,8 @@ groups:
               device:telescope:is_connected * on(host) max without(item) (nina_status{category!~".*Instruction Set.*",item=~".*Container"}) == bool 0 > 0
             ) AND on()
             (
-              condition:is_night * on(latitude,longitude) 
-              sgn(max without(source,site) (weather_clouds{when="now"}) < 90) * on(latitude,longitude) 
+              condition:is_night * on(latitude,longitude)
+              sgn(max without(source,site) (weather_clouds{when="now"}) < 90) * on(latitude,longitude)
               sgn((timeOfDay_begin_day - time()) / 60 / 60>1.0)
             )
       for: 5m
@@ -295,14 +294,14 @@ groups:
 
     - alert: TargetSchedulerStuck
       expr: (
-              device:telescope:is_connected * on(host) 
+              device:telescope:is_connected * on(host)
               nina_status{item=~".*TargetAreaContainer"} * on(host)
               nina_status{item="TakeExposure",category="Scheduler"}
             ) == bool 0 > 0
             AND on()
             (
-              condition:is_night * on(latitude,longitude) 
-              sgn(max without(source,site) (weather_clouds{when="now"}) < 90) * on(latitude,longitude) 
+              condition:is_night * on(latitude,longitude)
+              sgn(max without(source,site) (weather_clouds{when="now"}) < 90) * on(latitude,longitude)
               sgn((timeOfDay_begin_day - time()) / 60 / 60>1.0)
             )
       for: 15m
