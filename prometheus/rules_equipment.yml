@@ -24,9 +24,10 @@ groups:
           Guiding is enabled but no scope is connected.
 
     - alert: ExcessiveAutoFocus
-      expr: max by(host,camera) (avg_over_time(nina_status{category!~".*Instruction Set.*",item="RunAutofocus"}[1h]) * on(host,camera) 
+      expr: max by(host,camera) (avg_over_time(nina_status{category!~".*Instruction Set.*",item="RunAutofocus"}[1h]) * on(host,camera)
             group_left avg_over_time(nina_status{item="NINA.Sequencer.Container.TargetAreaContainer"}[1h]) * on(host)
             rate(alpaca_focuser_temperature[15m])) > 0.1
+      for: 5m
       labels:
         severity: critical
       annotations:
